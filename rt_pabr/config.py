@@ -7,7 +7,7 @@ CONFIG_FILE = os.path.join(CONFIG_DIR, 'config.json')
 
 DEFAULTS = {
     "WORKSPACE_DIR": os.getcwd(),
-    "FORCE_SOUNDDEVICE": False,
+    "FORCE_SOUNDDEVICE": True,
     "BAYESIAN_WEIGHTING": True,
     "CH_LEFT_NONINV": "None",
     "CH_LEFT_INV": "ABR-L",
