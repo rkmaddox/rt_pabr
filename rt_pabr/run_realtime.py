@@ -61,7 +61,7 @@ def launch():
 def open_creator():
     creator = tk.Toplevel(root)
     creator.title("Create Paradigm")
-    creator.geometry("700x450")
+    creator.geometry("700x550")
     
     runs_frame = tk.Frame(creator)
     runs_frame.pack(fill='both', expand=True, pady=10)
@@ -106,7 +106,7 @@ def open_creator():
             return
             
         types_groups = {'clicks': [], 'pips': []}
-        for stim_var, db_var, _ in runs:
+        for stim_var, db_var, _, _, _ in runs:
             stim = stim_var.get().lower()
             t = 'pips' if 'pips' in stim else 'clicks'
             try: db = int(db_var.get())
@@ -131,24 +131,53 @@ def open_creator():
         fn_var.set(new_name)
         
     def add_run():
-        row = tk.Frame(runs_frame)
-        row.pack(fill='x', pady=5, padx=10)
+        run_frame = tk.Frame(runs_frame, bd=1, relief='groove')
+        run_frame.pack(fill='x', pady=2, padx=10)
         
-        tk.Label(row, text="Stim:").pack(side='left')
+        row1 = tk.Frame(run_frame)
+        row1.pack(fill='x', pady=2, padx=5)
+        
+        tk.Label(row1, text="Stim:").pack(side='left')
         stim_var = tk.StringVar(value=stim_files[0])
         stim_var.trace_add('write', update_filename)
-        tk.OptionMenu(row, stim_var, *stim_files).pack(side='left', padx=(0, 10))
+        tk.OptionMenu(row1, stim_var, *stim_files).pack(side='left', padx=(0, 10))
         
-        tk.Label(row, text="dB:").pack(side='left')
+        tk.Label(row1, text="dB:").pack(side='left')
         db_var = tk.StringVar(value="80")
         db_var.trace_add('write', update_filename)
-        tk.Entry(row, textvariable=db_var, width=5, justify='center').pack(side='left', padx=(0, 10))
+        tk.Entry(row1, textvariable=db_var, width=5, justify='center').pack(side='left', padx=(0, 10))
         
-        tk.Label(row, text="Trials:").pack(side='left')
+        tk.Label(row1, text="Trials:").pack(side='left')
         tr_var = tk.StringVar(value="900")
-        tk.Entry(row, textvariable=tr_var, width=5, justify='center').pack(side='left')
+        tk.Entry(row1, textvariable=tr_var, width=5, justify='center').pack(side='left')
         
-        runs.append((stim_var, db_var, tr_var))
+        row2 = tk.Frame(run_frame)
+        row2.pack(fill='x', pady=2, padx=5)
+        
+        tk.Label(row2, text="Ears:").pack(side='left')
+        ear_vars = [tk.BooleanVar(value=True), tk.BooleanVar(value=True)]
+        tk.Checkbutton(row2, text="Left", variable=ear_vars[0]).pack(side='left')
+        tk.Checkbutton(row2, text="Right", variable=ear_vars[1]).pack(side='left', padx=(0, 15))
+        
+        row3 = tk.Frame(run_frame)
+        row3.pack(fill='x', pady=2, padx=5)
+        
+        tk.Label(row3, text="Bands:").pack(side='left')
+        band_vars = [tk.BooleanVar(value=True) for _ in range(5)]
+        band_cbs = []
+        for bv, bl in zip(band_vars, ["500", "1000", "2000", "4000", "8000"]):
+            cb = tk.Checkbutton(row3, text=bl, variable=bv)
+            cb.pack(side='left')
+            band_cbs.append(cb)
+            
+        def update_band_state(*args):
+            state = 'disabled' if 'clicks' in stim_var.get().lower() else 'normal'
+            for cb in band_cbs: cb.config(state=state)
+                
+        stim_var.trace_add('write', update_band_state)
+        update_band_state()  # Set initial state
+        
+        runs.append((stim_var, db_var, tr_var, ear_vars, band_vars))
         update_filename()
         
     add_run()
@@ -164,13 +193,19 @@ def open_creator():
         units_val = corr_vars[-1].get()
 
         out = []
-        for stim, db, tr in runs:
+        for stim, db, tr, e_vars, b_vars in runs:
+            ear_picks = [i for i, v in enumerate(e_vars) if v.get()]
+            if len(ear_picks) == 2: ear_picks = []
+            
+            band_picks = [i for i, v in enumerate(b_vars) if v.get()]
+            if len(band_picks) == 5: band_picks = []
+            
             out.append({
                 "fn_stim": stim.get(), 
                 "stim_db": int(db.get()), 
                 "n_trials": int(tr.get()), 
-                "band_picks": [], 
-                "ear_picks": [],
+                "band_picks": band_picks, 
+                "ear_picks": ear_picks,
                 "correction_factors": cf,
                 "units": units_val
             })
@@ -382,7 +417,7 @@ def open_settings():
     setting_groups = [
         ("Experiment Settings", {
             "WORKSPACE_DIR": "Working directory",
-            "FORCE_SOUNDDEVICE": "Force sounddevice",
+            "FORCE_SOUNDDEVICE": "Force sounddevice (allows gapless audio playback)",
             "BAYESIAN_WEIGHTING": "Use Bayesian Weighting",
             "TOGGLE_EXP_KEY": "Pause hotkey",
             "XLIMS": "Default x-limits (ms)",
