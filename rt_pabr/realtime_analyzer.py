@@ -167,8 +167,14 @@ def main():
     for run in range(n_runs):
         stim_path = resolve_stim_path(run_data[run]['fn_stim'])
         s = read_hdf5(stim_path, title='expyfun')
-        all_f_bands.update(s['f_band'].tolist())
-        run_f_bands[run] = s['f_band'].tolist()
+        
+        run_f_band = s['f_band'].tolist()
+        band_picks = run_data[run].get('band_picks', [])
+        if len(band_picks) > 0:
+            run_f_band = [f for f in run_f_band if int(round(f)) in np.round(band_picks).astype(int)]
+            
+        all_f_bands.update(run_f_band)
+        run_f_bands[run] = run_f_band
         if stim_dn_fs is None:
             stim_dn_fs = s['fs']
             trial_dur = s['x_pulse'].shape[-1] / stim_dn_fs
@@ -246,7 +252,18 @@ def main():
     for run in range(n_runs):
         s = read_hdf5(resolve_stim_path(run_data[run]['fn_stim']), title='expyfun')
         stim_fs = s['fs']
-        x_pulse = s['x_pulse']
+        x_pulse = s['x_pulse'].copy()
+        
+        ear_picks = run_data[run].get('ear_picks', [])
+        if len(ear_picks) > 0:
+            if 0 not in ear_picks: x_pulse[:, 0, :, :] = 0
+            if 1 not in ear_picks: x_pulse[:, 1, :, :] = 0
+            
+        band_picks = run_data[run].get('band_picks', [])
+        if len(band_picks) > 0:
+            mask = ~np.isin(np.round(s['f_band']).astype(int), np.round(band_picks).astype(int))
+            x_pulse[:, :, mask, :] = 0
+            
         n_toks = x_pulse.shape[0]
         x_pulse_dn = np.zeros([n_toks, n_ears, n_freq, int((config.TMAX-config.TMIN)*fs)])
         t_idx, e_idx, f_idx, n_idx = np.where(np.abs(x_pulse) > 0.5)
