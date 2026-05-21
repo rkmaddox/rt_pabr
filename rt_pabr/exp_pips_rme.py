@@ -353,11 +353,12 @@ with ExperimentController(run_file, verbose=True, screen_num=0,
 
         ec.set_stim_db(runs[ri]['stim_db'])
         # put the audio data in there
-        x = data[data_fn[ri]]['x'][tok]
+        x = data[data_fn[ri]]['x'][tok].copy()
         if len(runs[ri]['band_picks']):
-            x1 = x[:, np.isin(
+            mask = ~np.isin(
                 np.round(data[data_fn[ri]]['f_band']).astype(int),
-                np.round(runs[ri]['band_picks']).astype(int))]
+                np.round(runs[ri]['band_picks']).astype(int))
+            x[:, mask, :] = 0
         if runs[ri]['ear_picks'] == [0]:
             x[1] *= 0
         elif runs[ri]['ear_picks'] == [1]:
