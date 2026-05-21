@@ -28,12 +28,6 @@ from h5io import read_hdf5, write_hdf5
 
 from rt_pabr import config
 
-try:
-    import cmocean
-except ImportError:
-    print("cmocean not installed. Using matplotlib's viridis instead.")
-    cmocean = None
-
 _START_TIME = time.time()
 
 parser = argparse.ArgumentParser()
@@ -307,13 +301,9 @@ def main():
     levels_sorted = levels_float[levels_indices]
     n_levels = len(levels_sorted)
     
-    if cmocean:
-        cm_lines, cmlb, cmub = cmocean.cm.phase, 1.0, 0.2
-        base_colors = cm_lines(np.linspace(cmlb, cmub, n_freq))
-    else:
-        base_colors = plt.cm.viridis(np.linspace(0, 1, n_freq))
-        
-    pabr_colors = ['black' if f == 0 else base_colors[i] for i, f in enumerate(f_band)]
+    color_map = {0: 'k', 500: '#b5860d', 1000: '#1fa33a', 2000: '#2176c7', 4000: '#9b59b6', 8000: '#c0304a'}
+    # Fallback to black if a frequency isn't in the predefined map
+    pabr_colors = [color_map.get(int(f), 'k') for f in f_band]
 
     fig = plt.figure(figsize=(14, max(6.0, 1.5*n_levels + 1.5)))
     fig.suptitle(f"Subject: {participant}", fontsize=14, fontweight='bold')

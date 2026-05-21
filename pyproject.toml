@@ -21,8 +21,7 @@ dependencies = [
     "h5io",
     "rtmixer",
     "expyfun",
-    "sounddevice",
-    "cmocean"
+    "sounddevice"
 ]
 
 [project.scripts]
