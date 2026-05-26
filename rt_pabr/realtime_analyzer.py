@@ -15,6 +15,7 @@ import time
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox
+import ast
 
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
@@ -170,6 +171,7 @@ def main():
         
         run_f_band = s['f_band'].tolist()
         band_picks = run_data[run].get('band_picks', [])
+        band_picks = ast.literal_eval(band_picks)
         if len(band_picks) > 0:
             run_f_band = [f for f in run_f_band if int(round(f)) in np.round(band_picks).astype(int)]
             
@@ -255,11 +257,13 @@ def main():
         x_pulse = s['x_pulse'].copy()
         
         ear_picks = run_data[run].get('ear_picks', [])
+        ear_picks = ast.literal_eval(ear_picks)
         if len(ear_picks) > 0:
             if 0 not in ear_picks: x_pulse[:, 0, :, :] = 0
             if 1 not in ear_picks: x_pulse[:, 1, :, :] = 0
             
         band_picks = run_data[run].get('band_picks', [])
+        band_picks = ast.literal_eval(band_picks)
         if len(band_picks) > 0:
             mask = ~np.isin(np.round(s['f_band']).astype(int), np.round(band_picks).astype(int))
             x_pulse[:, :, mask, :] = 0
